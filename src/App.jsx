@@ -26,12 +26,16 @@ function App() {
   const [messageType, setMessageType] = useState('')
   const [activeSection, setActiveSection] = useState('Asistente LinkiNormas')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // Formulario adaptado a los parámetros requeridos por el Backend NestJS
   const [assistantForm, setAssistantForm] = useState({
-    configuracion: 'Sencilla',
-    tension: '13.2 kV',
-    calibreConductor: '1/0',
-    nivelPoste: 'Punta',
+    codigoLikinorma: 'LA202',
+    nivelTension: '13.2 kV',
+    nivelMontajeFisico: 1,
+    capacidadCargaPoste: '510 daN',
+    calibreTroncal: '1/0 ACSR',
   })
+  
   const [assistantResults, setAssistantResults] = useState([])
   const [assistantLoading, setAssistantLoading] = useState(false)
 
@@ -79,23 +83,40 @@ function App() {
     setView('login')
   }
 
-  const handleAssistantSubmit = (e) => {
+  // Petición real al backend NestJS
+  const handleAssistantSubmit = async (e) => {
     e.preventDefault()
     setAssistantLoading(true)
     setMessage('')
     setMessageType('')
+    setAssistantResults([])
 
-    setTimeout(() => {
-      setAssistantResults([
-        { id: 1, codigo: 'MAT-001', descripcion: 'Aislador de porcelana tipo pin 15kV', cantidad: 3 },
-        { id: 2, codigo: 'MAT-042', descripcion: 'Cruceta de acero galvanizado 2.4m', cantidad: 1 },
-        { id: 3, codigo: 'MAT-109', descripcion: 'Grapa de retención tipo pistola', cantidad: 3 },
-        { id: 4, codigo: 'MAT-088', descripcion: 'Perno espárrago 5/8" x 10"', cantidad: 2 },
-      ])
-      setAssistantLoading(false)
-      setMessage('Combinación calculada correctamente')
+    try {
+      const response = await fetch('http://localhost:3001/materiales/generar-lista', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...assistantForm,
+          nivelMontajeFisico: Number(assistantForm.nivelMontajeFisico),
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: No se pudo procesar la solicitud`)
+      }
+
+      const data = await response.json()
+      setAssistantResults(data)
+      setMessage('Lista de materiales calculada correctamente desde la norma')
       setMessageType('success')
-    }, 1500)
+    } catch (err) {
+      setMessage(err.message || 'Error al conectar con el backend (puerto 3001)')
+      setMessageType('error')
+    } finally {
+      setAssistantLoading(false)
+    }
   }
 
   if (!isAuthenticated) {
@@ -329,71 +350,84 @@ function App() {
                 <div className="col-span-full rounded-3xl border border-slate-200 bg-white p-6 shadow-sm lg:p-8">
                   <div>
                     <h3 className="text-lg font-bold text-slate-900">Configurador Estructural Paramétrico</h3>
-                    <p className="text-sm text-slate-400">Selecciona los parámetros de la estructura de red para calcular automáticamente la lista de materiales normalizada.</p>
+                    <p className="text-sm text-slate-400">Ingresa los parámetros de la estructura de red para obtener automáticamente la lista de materiales desde el motor de reglas.</p>
                   </div>
 
                   {message && (
-                    <div className={`mt-6 rounded-2xl px-4 py-3 text-sm font-medium ${messageType === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                    <div className={`mt-6 rounded-2xl px-4 py-3 text-sm font-medium ${messageType === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'}`}>
                       {message}
                     </div>
                   )}
 
                   <form onSubmit={handleAssistantSubmit} className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:col-span-2">
                     <div>
-                      <label className="mb-2 block text-sm font-medium text-slate-600">Configuración de Red</label>
-                      <select
-                        value={assistantForm.configuracion}
-                        onChange={(e) => setAssistantForm({ ...assistantForm, configuracion: e.target.value })}
+                      <label className="mb-2 block text-sm font-medium text-slate-600">Código Likinorma</label>
+                      <input
+                        type="text"
+                        value={assistantForm.codigoLikinorma}
+                        onChange={(e) => setAssistantForm({ ...assistantForm, codigoLikinorma: e.target.value })}
+                        required
                         className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-cyan-400"
-                      >
-                        <option value="Sencilla">Sencilla (Paso)</option>
-                        <option value="Doble">Doble Angular</option>
-                        <option value="Retención">Retención Terminal</option>
-                      </select>
+                        placeholder="Ej: LA202"
+                      />
                     </div>
+
                     <div>
                       <label className="mb-2 block text-sm font-medium text-slate-600">Nivel de Tensión</label>
                       <select
-                        value={assistantForm.tension}
-                        onChange={(e) => setAssistantForm({ ...assistantForm, tension: e.target.value })}
+                        value={assistantForm.nivelTension}
+                        onChange={(e) => setAssistantForm({ ...assistantForm, nivelTension: e.target.value })}
                         className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-cyan-400"
                       >
-                        <option value="13.2 kV">13.2 kV (Media Tensión)</option>
-                        <option value="34.5 kV">34.5 kV (Media Tensión)</option>
-                        <option value="110 V / 220 V">110V/220V (Baja Tensión)</option>
+                        <option value="11.4 kV">11.4 kV</option>
+                        <option value="13.2 kV">13.2 kV</option>
+                        <option value="34.5 kV">34.5 kV</option>
                       </select>
                     </div>
+
                     <div>
-                      <label className="mb-2 block text-sm font-medium text-slate-600">Calibre del Conductor</label>
-                      <select
-                        value={assistantForm.calibreConductor}
-                        onChange={(e) => setAssistantForm({ ...assistantForm, calibreConductor: e.target.value })}
+                      <label className="mb-2 block text-sm font-medium text-slate-600">Nivel Montaje Físico</label>
+                      <input
+                        type="number"
+                        value={assistantForm.nivelMontajeFisico}
+                        onChange={(e) => setAssistantForm({ ...assistantForm, nivelMontajeFisico: e.target.value })}
+                        required
                         className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-cyan-400"
-                      >
-                        <option value="No. 2">No. 2</option>
-                        <option value="1/0">1/0</option>
-                        <option value="3/0">3/0</option>
-                        <option value="4/0">4/0</option>
-                      </select>
+                        placeholder="Ej: 1"
+                      />
                     </div>
+
                     <div>
-                      <label className="mb-2 block text-sm font-medium text-slate-600">Nivel de Poste</label>
-                      <select
-                        value={assistantForm.nivelPoste}
-                        onChange={(e) => setAssistantForm({ ...assistantForm, nivelPoste: e.target.value })}
+                      <label className="mb-2 block text-sm font-medium text-slate-600">Capacidad Carga Poste</label>
+                      <input
+                        type="text"
+                        value={assistantForm.capacidadCargaPoste}
+                        onChange={(e) => setAssistantForm({ ...assistantForm, capacidadCargaPoste: e.target.value })}
+                        required
                         className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-cyan-400"
-                      >
-                        <option value="Punta">Punta</option>
-                        <option value="Cuerpo">Cuerpo</option>
-                      </select>
+                        placeholder="Ej: 510 daN"
+                      />
                     </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="mb-2 block text-sm font-medium text-slate-600">Calibre Troncal</label>
+                      <input
+                        type="text"
+                        value={assistantForm.calibreTroncal}
+                        onChange={(e) => setAssistantForm({ ...assistantForm, calibreTroncal: e.target.value })}
+                        required
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-cyan-400"
+                        placeholder="Ej: 1/0 ACSR"
+                      />
+                    </div>
+
                     <div className="sm:col-span-2">
                       <button
                         type="submit"
                         disabled={assistantLoading}
-                        className="inline-flex items-center gap-2 rounded-2xl bg-cyan-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-70"
+                        className="inline-flex items-center gap-2 rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-70"
                       >
-                        {assistantLoading ? 'Calculando...' : 'Calcular Materiales'}
+                        {assistantLoading ? 'Procesando consulta...' : 'Calcular Materiales'}
                         <ChevronRight size={16} />
                       </button>
                     </div>
@@ -404,16 +438,14 @@ function App() {
                       <table className="min-w-full divide-y divide-slate-200 bg-white text-sm">
                         <thead className="bg-slate-50 text-left text-slate-600">
                           <tr>
-                            <th className="px-4 py-3 font-semibold">Código</th>
-                            <th className="px-4 py-3 font-semibold">Descripción</th>
+                            <th className="px-4 py-3 font-semibold">Código Material</th>
                             <th className="px-4 py-3 font-semibold">Cantidad</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200">
-                          {assistantResults.map((item) => (
-                            <tr key={item.id} className="hover:bg-slate-50">
-                              <td className="px-4 py-3 font-medium text-slate-800">{item.codigo}</td>
-                              <td className="px-4 py-3 text-slate-600">{item.descripcion}</td>
+                          {assistantResults.map((item, index) => (
+                            <tr key={index} className="hover:bg-slate-50">
+                              <td className="px-4 py-3 font-semibold text-slate-800">{item.codigo}</td>
                               <td className="px-4 py-3 text-slate-600">{item.cantidad}</td>
                             </tr>
                           ))}
