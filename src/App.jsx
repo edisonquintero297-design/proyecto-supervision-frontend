@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   CheckCircle2,
 } from 'lucide-react'
+import CalculadorEstructuras from './components/CalculadorEstructuras.jsx'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(true)
@@ -347,112 +348,8 @@ function App() {
               )}
 
               {activeSection === 'Asistente LinkiNormas' && (
-                <div className="col-span-full rounded-3xl border border-slate-200 bg-white p-6 shadow-sm lg:p-8">
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900">Configurador Estructural Paramétrico</h3>
-                    <p className="text-sm text-slate-400">Ingresa los parámetros de la estructura de red para obtener automáticamente la lista de materiales desde el motor de reglas.</p>
-                  </div>
-
-                  {message && (
-                    <div className={`mt-6 rounded-2xl px-4 py-3 text-sm font-medium ${messageType === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'}`}>
-                      {message}
-                    </div>
-                  )}
-
-                  <form onSubmit={handleAssistantSubmit} className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:col-span-2">
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-slate-600">Código Likinorma</label>
-                      <input
-                        type="text"
-                        value={assistantForm.codigoLikinorma}
-                        onChange={(e) => setAssistantForm({ ...assistantForm, codigoLikinorma: e.target.value })}
-                        required
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-cyan-400"
-                        placeholder="Ej: LA202"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-slate-600">Nivel de Tensión</label>
-                      <select
-                        value={assistantForm.nivelTension}
-                        onChange={(e) => setAssistantForm({ ...assistantForm, nivelTension: e.target.value })}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-cyan-400"
-                      >
-                        <option value="11.4 kV">11.4 kV</option>
-                        <option value="13.2 kV">13.2 kV</option>
-                        <option value="34.5 kV">34.5 kV</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-slate-600">Nivel Montaje Físico</label>
-                      <input
-                        type="number"
-                        value={assistantForm.nivelMontajeFisico}
-                        onChange={(e) => setAssistantForm({ ...assistantForm, nivelMontajeFisico: e.target.value })}
-                        required
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-cyan-400"
-                        placeholder="Ej: 1"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-slate-600">Capacidad Carga Poste</label>
-                      <input
-                        type="text"
-                        value={assistantForm.capacidadCargaPoste}
-                        onChange={(e) => setAssistantForm({ ...assistantForm, capacidadCargaPoste: e.target.value })}
-                        required
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-cyan-400"
-                        placeholder="Ej: 510 daN"
-                      />
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <label className="mb-2 block text-sm font-medium text-slate-600">Calibre Troncal</label>
-                      <input
-                        type="text"
-                        value={assistantForm.calibreTroncal}
-                        onChange={(e) => setAssistantForm({ ...assistantForm, calibreTroncal: e.target.value })}
-                        required
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-cyan-400"
-                        placeholder="Ej: 1/0 ACSR"
-                      />
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <button
-                        type="submit"
-                        disabled={assistantLoading}
-                        className="inline-flex items-center gap-2 rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-70"
-                      >
-                        {assistantLoading ? 'Procesando consulta...' : 'Calcular Materiales'}
-                        <ChevronRight size={16} />
-                      </button>
-                    </div>
-                  </form>
-
-                  {assistantResults.length > 0 && (
-                    <div className="mt-8 overflow-hidden rounded-3xl border border-slate-200">
-                      <table className="min-w-full divide-y divide-slate-200 bg-white text-sm">
-                        <thead className="bg-slate-50 text-left text-slate-600">
-                          <tr>
-                            <th className="px-4 py-3 font-semibold">Código Material</th>
-                            <th className="px-4 py-3 font-semibold">Cantidad</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-200">
-                          {assistantResults.map((item, index) => (
-                            <tr key={index} className="hover:bg-slate-50">
-                              <td className="px-4 py-3 font-semibold text-slate-800">{item.codigo}</td>
-                              <td className="px-4 py-3 text-slate-600">{item.cantidad}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+                <div className="col-span-full">
+                  <CalculadorEstructuras />
                 </div>
               )}
 
