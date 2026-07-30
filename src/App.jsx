@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
+import Materiales from './components/Materiales'
+import CalculadorEstructuras from './components/CalculadorEstructuras.jsx'
 import {
   LayoutDashboard,
   Wand2,
@@ -13,7 +15,6 @@ import {
   AlertTriangle,
   CheckCircle2,
 } from 'lucide-react'
-import CalculadorEstructuras from './components/CalculadorEstructuras.jsx'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(true)
@@ -354,11 +355,9 @@ function App() {
               )}
 
               {activeSection === 'Materiales' && (
-                <div className="col-span-full rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <h3 className="text-lg font-bold text-slate-900">Gestión de materiales</h3>
-                  <p className="mt-2 text-sm text-slate-500">Revisa el inventario y la disponibilidad de los insumos para cada estructura.</p>
-                </div>
-              )}
+                <div className="col-span-full w-full">
+                <Materiales />
+                </div>)}
 
               {activeSection === 'Reportes' && (
                 <div className="col-span-full rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">

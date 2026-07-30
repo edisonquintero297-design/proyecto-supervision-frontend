@@ -44,11 +44,25 @@ export default function CalculadorEstructuras() {
   )
 
   const tipoApoyoOptions = useMemo(
-    () => parametroMap.TIPO_APOYO?.map((item) => item.valor) ?? [
-      'POSTE_CONCRETO_12M_510',
-      'POSTE_CONCRETO_10M_450',
-      'TORRE_METALICA',
-    ],
+    () =>
+      parametroMap.TIPO_APOYO?.length
+        ? parametroMap.TIPO_APOYO.map((item) => item.valor)
+        : [
+            'POSTE_CONCRETO_12M_1050',
+            'POSTE_CONCRETO_10M_1050',
+            'POSTE_CONCRETO_12M_510',
+            'POSTE_CONCRETO_12M_750',
+            'POSTE_CONCRETO_12M_1350',
+            'POSTE_CONCRETO_14M_1050',
+            'POSTE_CONCRETO_14M_1350',
+            'POSTE_METALICO_10M_1050',
+            'POSTE_METALICO_12M_510',
+            'POSTE_METALICO_12M_750',
+            'POSTE_METALICO_12M_1050',
+            'POSTE_METALICO_12M_1350',
+            'POSTE_METALICO_14M_1050',
+            'POSTE_METALICO_14M_1350',
+          ],
     [parametroMap],
   )
 
@@ -96,11 +110,39 @@ export default function CalculadorEstructuras() {
     }
   }
 
+  // Función para exportar los resultados calculados a un archivo CSV compatible con Excel
+  const exportarExcel = () => {
+    if (resultados.length === 0) return
+
+    const cabeceras = ['Código', 'Descripción Técnica', 'Unidad', 'Cantidad', 'Observación']
+    const filas = resultados.map((item) => [
+      item.codigo || '',
+      `"${(item.descripcionTecnica || '').replace(/"/g, '""')}"`,
+      item.unidad || '',
+      item.cantidadCalculada || 0,
+      `"${(item.observacion || '').replace(/"/g, '""')}"`,
+    ])
+
+    // Agregar BOM \uFEFF para que Excel abra el archivo con codificación UTF-8 correcta
+    const contenido = [cabeceras.join(','), ...filas.map((f) => f.join(','))].join('\n')
+    const blob = new Blob(['\uFEFF' + contenido], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `Calculo_${input.codigoEstructura}_${input.cantidad}un.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   return (
     <div className="space-y-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
       <div>
         <h2 className="text-2xl font-semibold text-slate-900">Calculador de Estructuras Serie LA</h2>
-        <p className="mt-2 text-sm text-slate-500">Selecciona una estructura LA, ajusta parámetros y obtiene el desglose de materiales calculados.</p>
+        <p className="mt-2 text-sm text-slate-500">
+          Selecciona una estructura LA, ajusta parámetros y obtiene el desglose de materiales calculados.
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="grid gap-4 lg:grid-cols-2">
@@ -208,8 +250,17 @@ export default function CalculadorEstructuras() {
       )}
 
       {resultados.length > 0 && (
-        <div className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 p-4">
-          <h3 className="text-lg font-semibold text-slate-900">Resultados de materiales</h3>
+        <div className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 p-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h3 className="text-lg font-semibold text-slate-900">Resultados de materiales</h3>
+            <button
+              onClick={exportarExcel}
+              className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700"
+            >
+              📊 Exportar Cálculo a Excel
+            </button>
+          </div>
+
           <div className="mt-4 overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-200 text-sm">
               <thead className="bg-white text-left text-slate-600">
@@ -224,10 +275,10 @@ export default function CalculadorEstructuras() {
               <tbody className="divide-y divide-slate-200 bg-white">
                 {resultados.map((item, index) => (
                   <tr key={index} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 font-semibold text-slate-900">{item.codigo}</td>
-                    <td className="px-4 py-3 text-slate-600">{item.descripcionTecnica}</td>
+                    <td className="px-4 py-3 font-semibold text-cyan-600">{item.codigo}</td>
+                    <td className="px-4 py-3 text-slate-700">{item.descripcionTecnica}</td>
                     <td className="px-4 py-3 text-slate-600">{item.unidad}</td>
-                    <td className="px-4 py-3 text-slate-700">{item.cantidadCalculada}</td>
+                    <td className="px-4 py-3 font-bold text-slate-900">{item.cantidadCalculada}</td>
                     <td className="px-4 py-3 text-slate-600">{item.observacion || '-'}</td>
                   </tr>
                 ))}
@@ -239,7 +290,9 @@ export default function CalculadorEstructuras() {
 
       <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <h3 className="text-lg font-semibold text-slate-900">Buscador directo de materiales</h3>
-        <p className="mt-1 text-sm text-slate-500">Busca entre el catálogo de materiales con autocompletado desde el almacén.</p>
+        <p className="mt-1 text-sm text-slate-500">
+          Busca entre el catálogo de materiales con autocompletado desde el almacén.
+        </p>
         <div className="mt-4 space-y-3">
           <input
             type="search"

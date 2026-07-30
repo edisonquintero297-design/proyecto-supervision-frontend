@@ -36,3 +36,12 @@ export async function calcularEstructura(dto) {
   });
   return handleResponse(response);
 }
+
+const api = {
+  getCatalogoMateriales,
+  getEstructuras,
+  getParametros,
+  calcularEstructura,
+};
+
+export default api;
