@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import * as XLSX from 'xlsx'
 
 export default function Materiales() {
   // Estados de datos
@@ -119,54 +120,59 @@ export default function Materiales() {
     }
   }
 
-  // Exportar Pedido a Excel / CSV
   const exportarPedidoExcel = () => {
-    if (pedido.length === 0) return
+    if (!pedido || pedido.length === 0) return;
 
-    const cabeceras = ['Código', 'Código Empresa', 'Descripción Técnica', 'Unidad', 'Cantidad Solicitada']
-    const filas = pedido.map((m) => [
-      m.codigo || '',
-      m.codigoEmpresa || '',
-      `"${m.descripcion || ''}"`,
-      m.unidad || 'UND',
-      m.cantidad || 1
-    ])
+    const datosExcel = pedido.map((item) => ({
+      'Código': item.codigo || '',
+      'Código Empresa': item.codigoEmpresa || '',
+      'Descripción Técnica': item.descripcion || '',
+      'Unidad': item.unidad || 'UND',
+      'Cantidad Solicitada': Number(item.cantidad || 1),
+    }));
 
-    const contenido = [cabeceras.join(','), ...filas.map((f) => f.join(','))].join('\n')
-    const blob = new Blob(['\uFEFF' + contenido], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
+    const worksheet = XLSX.utils.json_to_sheet(datosExcel);
 
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', `Solicitud_Pedido_Manual_${new Date().toISOString().slice(0, 10)}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
+    worksheet['!cols'] = [
+      { wch: 18 },
+      { wch: 20 },
+      { wch: 55 },
+      { wch: 12 },
+      { wch: 20 },
+    ];
 
-  // Exportar Catálogo Filtrado a Excel / CSV
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Solicitud Pedido');
+
+    const fecha = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(workbook, `Solicitud_Pedido_Manual_${fecha}.xlsx`);
+  };
+
   const exportarCatálogoExcel = () => {
     const lista = materialesFiltrados.length > 0 ? materialesFiltrados : materiales
     if (!lista || lista.length === 0) return
 
-    const cabeceras = ['Código Interno', 'Código Empresa (SAP)', 'Descripción Técnica', 'Unidad']
-    const filas = lista.map((m) => [
-      m.codigo || '',
-      m.codigoEmpresa || '',
-      `"${m.descripcion || ''}"`,
-      m.unidad || 'UND'
-    ])
+    const datosExcel = lista.map((m) => ({
+      'Código Interno': m.codigo || '',
+      'Código Empresa (SAP)': m.codigoEmpresa || '',
+      'Descripción Técnica': m.descripcion || '',
+      'Unidad': m.unidad || 'UND',
+    }))
 
-    const contenido = [cabeceras.join(','), ...filas.map((f) => f.join(','))].join('\n')
-    const blob = new Blob(['\uFEFF' + contenido], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
+    const worksheet = XLSX.utils.json_to_sheet(datosExcel)
 
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', `Catalogo_Materiales_BD_${new Date().toISOString().slice(0, 10)}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    worksheet['!cols'] = [
+      { wch: 18 },
+      { wch: 20 },
+      { wch: 55 },
+      { wch: 12 },
+    ]
+
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Catálogo')
+
+    const fecha = new Date().toISOString().slice(0, 10)
+    XLSX.writeFile(workbook, `Catalogo_Materiales_BD_${fecha}.xlsx`)
   }
 
   // Búsqueda multi-campo en tiempo real (busca por código, código empresa o descripción)

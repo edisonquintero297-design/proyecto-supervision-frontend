@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 export default function AsistenteLinkiNormas() {
   const [formData, setFormData] = useState({
@@ -12,6 +12,24 @@ export default function AsistenteLinkiNormas() {
   const [materiales, setMateriales] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [estructuras, setEstructuras] = useState([]);
+  const [estructuraSeleccionada, setEstructuraSeleccionada] = useState('');
+
+  useEffect(() => {
+    const cargarEstructuras = async () => {
+      try {
+        const response = await fetch('http://localhost:3001/api/materiales/filtros');
+        if (!response.ok) throw new Error('Error al cargar estructuras');
+        const data = await response.json();
+        setEstructuras(data.estructuras || []);
+      } catch (error) {
+        console.error('Error cargando estructuras:', error);
+        setEstructuras([]);
+      }
+    };
+
+    cargarEstructuras();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -115,6 +133,25 @@ export default function AsistenteLinkiNormas() {
             style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
           />
         </div>
+
+        <label htmlFor="estructura" style={{ fontWeight: 'bold', color: '#475569' }}>
+          Estructura
+        </label>
+        <select
+          id="estructura"
+          value={estructuraSeleccionada}
+          onChange={(e) => setEstructuraSeleccionada(e.target.value)}
+          className="w-full border rounded-lg px-3 py-2"
+          style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+        >
+          <option value="">Seleccione una estructura...</option>
+          {estructuras &&
+            estructuras.map((e) => (
+              <option key={e.id || e.codigo} value={e.id || e.codigo}>
+                {e.label || `${e.codigo} - ${e.nombre}`}
+              </option>
+            ))}
+        </select>
 
         <button 
           type="submit" 

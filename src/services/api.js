@@ -17,8 +17,9 @@ export async function getCatalogoMateriales(q = '', page = 1) {
 }
 
 export async function getEstructuras() {
-  const response = await fetch(`${API_BASE_URL}/estructuras`);
-  return handleResponse(response);
+  const response = await fetch(`${API_BASE_URL}/materiales/filtros`);
+  const data = await handleResponse(response);
+  return data.estructuras || [];
 }
 
 export async function getParametros() {

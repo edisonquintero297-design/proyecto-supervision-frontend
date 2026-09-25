@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
+import * as XLSX from 'xlsx'
 import { getEstructuras, getParametros, calcularEstructura, getCatalogoMateriales } from '../services/api'
 
 const defaultInput = {
   codigoEstructura: '',
+  estructuraId: '',
   cantidad: 1,
   nivelTension: '13.2',
   tipoApoyo: 'POSTE_CONCRETO_12M_510',
@@ -27,7 +29,11 @@ export default function CalculadorEstructuras() {
         setEstructuras(estructurasData)
         setParametros(parametrosData)
         if (estructurasData.length > 0) {
-          setInput((prev) => ({ ...prev, codigoEstructura: prev.codigoEstructura || estructurasData[0].codigo }))
+          setInput((prev) => ({
+            ...prev,
+            estructuraId: prev.estructuraId || estructurasData[0].id,
+            codigoEstructura: prev.codigoEstructura || estructurasData[0].codigo,
+          }))
         }
       } catch (err) {
         setError(err.message)
@@ -77,7 +83,18 @@ export default function CalculadorEstructuras() {
   )
 
   const handleChange = (field, value) => {
-    setInput((prev) => ({ ...prev, [field]: value }))
+    setInput((prev) => {
+      if (field === 'estructuraId') {
+        const estructura = estructuras.find((item) => item.id === value)
+        return {
+          ...prev,
+          estructuraId: value,
+          codigoEstructura: estructura?.codigo ?? prev.codigoEstructura,
+        }
+      }
+
+      return { ...prev, [field]: value }
+    })
   }
 
   const handleSubmit = async (event) => {
@@ -110,30 +127,32 @@ export default function CalculadorEstructuras() {
     }
   }
 
-  // Función para exportar los resultados calculados a un archivo CSV compatible con Excel
   const exportarExcel = () => {
     if (resultados.length === 0) return
 
-    const cabeceras = ['Código', 'Descripción Técnica', 'Unidad', 'Cantidad', 'Observación']
-    const filas = resultados.map((item) => [
-      item.codigo || '',
-      `"${(item.descripcionTecnica || '').replace(/"/g, '""')}"`,
-      item.unidad || '',
-      item.cantidadCalculada || 0,
-      `"${(item.observacion || '').replace(/"/g, '""')}"`,
-    ])
+    const datosExcel = resultados.map((item) => ({
+      'Código': item.codigo || '',
+      'Descripción Técnica': item.descripcionTecnica || '',
+      'Unidad': item.unidad || '',
+      'Cantidad': Number(item.cantidadCalculada || 0),
+      'Observación': item.observacion || '',
+    }))
 
-    // Agregar BOM \uFEFF para que Excel abra el archivo con codificación UTF-8 correcta
-    const contenido = [cabeceras.join(','), ...filas.map((f) => f.join(','))].join('\n')
-    const blob = new Blob(['\uFEFF' + contenido], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
+    const worksheet = XLSX.utils.json_to_sheet(datosExcel)
 
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', `Calculo_${input.codigoEstructura}_${input.cantidad}un.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    worksheet['!cols'] = [
+      { wch: 18 },
+      { wch: 55 },
+      { wch: 12 },
+      { wch: 16 },
+      { wch: 40 },
+    ]
+
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Cálculo')
+
+    const nombreArchivo = `Calculo_${input.codigoEstructura}_${input.cantidad}un.xlsx`
+    XLSX.writeFile(workbook, nombreArchivo)
   }
 
   return (
@@ -149,13 +168,13 @@ export default function CalculadorEstructuras() {
         <div>
           <label className="mb-2 block text-sm font-semibold text-slate-700">Estructura</label>
           <select
-            value={input.codigoEstructura}
-            onChange={(e) => handleChange('codigoEstructura', e.target.value)}
+            value={input.estructuraId}
+            onChange={(e) => handleChange('estructuraId', e.target.value)}
             className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-cyan-500"
           >
             {estructuras.map((estructura) => (
-              <option key={estructura.codigo} value={estructura.codigo}>
-                {estructura.codigo} - {estructura.nombre}
+              <option key={estructura.id} value={estructura.id}>
+                {estructura.label}
               </option>
             ))}
           </select>
